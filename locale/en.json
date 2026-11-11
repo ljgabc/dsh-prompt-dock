@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Prompt library",
+    "description": "Save preset prompts and fill them into the composer from a picker beside the send button; create, edit, delete, and arrange them (to top, up, down, to bottom). The library is shared by every client of this Host."
+  }
+}

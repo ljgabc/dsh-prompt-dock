@@ -1,0 +1,24 @@
+{
+  "name": "@local/prompt-library",
+  "version": "1.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Preset prompt library: a picker beside the composer send action that fills the draft, with create/edit/delete plus a sort mode (to top, up, down, to bottom), backed by Host-side storage shared by every client of this Host.",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": ["index.js", "client.js", "cordis.patch.yml", "locale/*.json", "icon.svg"],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-client-ui-conversation"]
+    }
+  }
+}
