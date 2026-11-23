@@ -1,4 +1,4 @@
-# dsh-prompt-library
+# dsh-prompt-dock
 
 **DeepSeek Harness 预置提示词库插件** —— 输入框旁一键取用你的常用提示词，数据存 Host 侧，电脑、手机所有客户端共享。
 
@@ -36,13 +36,13 @@
 在「插件 → 添加插件」对话框里只填包名本身：
 
 ```
-dsh-prompt-library
+dsh-prompt-dock
 ```
 
 或在终端：
 
 ```sh
-dsh plugin --profile <你的profile> add dsh-prompt-library
+dsh plugin --profile <你的profile> add dsh-prompt-dock
 ```
 
 **方式二：本地目录（开发者）**
@@ -51,7 +51,7 @@ dsh plugin --profile <你的profile> add dsh-prompt-library
 git clone <本仓库> && dsh plugin --profile <你的profile> add ./prompt-library
 ```
 
-或软链接到 profile 的 `node_modules/dsh-prompt-library`，改代码后重启 DSH 即可。
+或软链接到 profile 的 `node_modules/dsh-prompt-dock`，改代码后重启 DSH 即可。
 
 > 安装或更新后需重启 DSH（profile 在启动期加载）。
 
@@ -80,3 +80,24 @@ git clone <本仓库> && dsh plugin --profile <你的profile> add ./prompt-libra
 ## 许可
 
 [MIT](LICENSE)
+
+---
+
+<a id="english"></a>
+
+# dsh-prompt-dock (English)
+
+A preset prompt library plugin for DeepSeek Harness: one compact **Prompts** button beside the composer's send action opens a picker of your own saved prompts. Picking one only fills the draft — set the draft when empty, insert at the caret otherwise (undoable via `Ctrl/Cmd+Z`), never submits.
+
+- **Full management**: create, edit, delete (inline form keeps your input on a failed save)
+- **Sort mode**: move to top / up / down / bottom, order persisted
+- **Shared across clients**: data lives in Host-side durable storage — desktop and phone browsers connected to the same Host see the same library
+- **Native look**: the shipped menu surface and CSS anchor positioning, follows the DSH theme; UI text follows the DSH locale (zh/en)
+- **No dependencies, no network**: no external requests, no account
+
+**Install**: in the DSH plugin dialog, enter just `dsh-prompt-dock` (published on npm; requires DSH ≥ 0.2.2-rc.5), or `dsh plugin --profile <profile> add dsh-prompt-dock` in a terminal. Restart DSH after install.
+
+**Data**: stored in the profile's storage domain (limits: 200 prompts, 20000 chars each); nothing leaves the Host.
+
+License: [MIT](LICENSE)
+

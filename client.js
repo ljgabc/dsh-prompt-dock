@@ -1,5 +1,5 @@
 /**
- * Browser half of the dsh-prompt-library bundle.
+ * Browser half of the dsh-prompt-dock bundle.
  *
  * Registers one compact entry in the `conversation.input.right` slot: a
  * button beside the send action that opens a preset-prompt picker. Picking a
@@ -22,7 +22,7 @@
  * tokens and `dshpl-` class names.
  */
 window.__ModuleLoader__.load({
-  id: 'dsh-prompt-library',
+  id: 'dsh-prompt-dock',
   factory(require) {
     const React = require('react')
     const { createElement: h, useState, useEffect, useRef, useCallback, useId, Fragment } = React
@@ -39,9 +39,9 @@ window.__ModuleLoader__.load({
       IconChevronDownOutlineRegular,
     } = require('@deepseek-ai/dsh-client-ui-primitives')
 
-    const NS = 'prompt-library'
+    const NS = 'prompt-dock'
     /** Document-relative route (the Host serves it under `/api`); matches the shipped file-upload route convention. */
-    const API_PATH = 'api/prompt-library/prompts'
+    const API_PATH = 'api/prompt-dock/prompts'
     const MAX_TITLE = 100
     const MAX_TEXT = 20000
 
@@ -530,20 +530,20 @@ window.__ModuleLoader__.load({
       apply(ctx) {
         const locale = ctx.get('locale')
         if (locale !== undefined) {
-          ctx.effect(() => locale.register(NS, { zh, en }), 'prompt-library: dictionaries')
+          ctx.effect(() => locale.register(NS, { zh, en }), 'prompt-dock: dictionaries')
           shared.t = locale.bind(NS)
         }
         const slots = ctx.get('slots')
-        if (slots === undefined) throw new Error('prompt-library requires the slots service')
+        if (slots === undefined) throw new Error('prompt-dock requires the slots service')
         ctx.effect(() => slots.inject('conversation.input.right', () => slots.register(
           {
             name: 'conversation.input.right',
-            id: 'prompt-library',
+            id: 'prompt-dock',
             order: 50,
             label: () => shared.t('button.label'),
           },
           Entry,
-        )), 'prompt-library: composer entry')
+        )), 'prompt-dock: composer entry')
       },
     }
   },

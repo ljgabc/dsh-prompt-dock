@@ -13,4 +13,4 @@
 ## 1.2.0
 
 - 排序模式：置顶 / 上移 / 下移 / 移到底，顺序持久保存。
-- 首次公开 npm 发布（原名 `@local/prompt-library`）。
+- 首次公开 npm 发布（此前自用名为 `@local/prompt-library`）。

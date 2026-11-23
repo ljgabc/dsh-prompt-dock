@@ -1,8 +1,8 @@
 /**
- * Host half of the dsh-prompt-library bundle.
+ * Host half of the dsh-prompt-dock bundle.
  *
  * Owns one schema-validated storage domain (`prompt_library`, table
- * `prompts`) and one exact Fetch route at `/api/prompt-library/prompts` that the browser half
+ * `prompts`) and one exact Fetch route at `/api/prompt-dock/prompts` that the browser half
  * calls. Reads are synchronous from the domain's authoritative in-memory
  * state; every write is durable before it resolves, so the preset prompts
  * survive restarts and are shared by every client of this Host (desktop
@@ -16,7 +16,7 @@
 export const inject = ['storageDomain', 'connection']
 
 const DOMAIN_NAME = 'prompt_library'
-const ROUTE_PATH = '/api/prompt-library/prompts'
+const ROUTE_PATH = '/api/prompt-dock/prompts'
 const MAX_PROMPTS = 200
 const MAX_TITLE_LENGTH = 100
 const MAX_TEXT_LENGTH = 20000
@@ -188,7 +188,7 @@ export async function apply(ctx) {
   const domain = await openDomain(storageDomain)
   // Own each resource from the moment it is acquired, so a later failure in
   // this apply can never leak it.
-  ctx.effect(() => async () => { await domain.close() }, 'prompt-library: storage domain')
+  ctx.effect(() => async () => { await domain.close() }, 'prompt-dock: storage domain')
 
   const disposeRoute = await connection.fetch.register({
     path: ROUTE_PATH,
@@ -203,5 +203,5 @@ export async function apply(ctx) {
       }
     },
   })
-  ctx.effect(() => async () => { await disposeRoute() }, 'prompt-library: fetch route')
+  ctx.effect(() => async () => { await disposeRoute() }, 'prompt-dock: fetch route')
 }
