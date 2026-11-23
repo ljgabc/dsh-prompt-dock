@@ -1,16 +1,28 @@
 {
-  "name": "@local/prompt-library",
+  "name": "dsh-prompt-library",
   "version": "1.2.2",
-  "private": true,
   "type": "module",
-  "description": "Preset prompt library: a picker beside the composer send action that fills the draft, with create/edit/delete plus a sort mode (to top, up, down, to bottom), backed by Host-side storage shared by every client of this Host.",
+  "description": "Preset prompt library for DeepSeek Harness: a picker beside the composer send action that fills the draft, with create/edit/delete plus a sort mode, backed by Host-side storage shared by every client of this Host (desktop browser and phone alike). DSH 预置提示词库，输入框旁一键取用，数据存 Host 侧、多端共享。",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "deepseek",
+    "prompt",
+    "prompt-library",
+    "prompts"
+  ],
+  "license": "MIT",
+  "author": "ljgabc <ljgabc@gmail.com>",
+  "engines": {
+    "dsh": ">=0.2.2-rc.5"
+  },
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg"
   },
-  "files": ["index.js", "client.js", "cordis.patch.yml", "locale/*.json", "icon.svg"],
+  "files": ["index.js", "client.js", "cordis.patch.yml", "locale/*.json", "icon.svg", "CHANGELOG.md"],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

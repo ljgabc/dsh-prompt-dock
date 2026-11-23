@@ -1,5 +1,5 @@
 /**
- * Browser half of the @local/prompt-library bundle.
+ * Browser half of the dsh-prompt-library bundle.
  *
  * Registers one compact entry in the `conversation.input.right` slot: a
  * button beside the send action that opens a preset-prompt picker. Picking a
@@ -22,7 +22,7 @@
  * tokens and `dshpl-` class names.
  */
 window.__ModuleLoader__.load({
-  id: '@local/prompt-library',
+  id: 'dsh-prompt-library',
   factory(require) {
     const React = require('react')
     const { createElement: h, useState, useEffect, useRef, useCallback, useId, Fragment } = React

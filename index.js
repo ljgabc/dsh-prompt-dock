@@ -1,5 +1,5 @@
 /**
- * Host half of the @local/prompt-library bundle.
+ * Host half of the dsh-prompt-library bundle.
  *
  * Owns one schema-validated storage domain (`prompt_library`, table
  * `prompts`) and one exact Fetch route at `/api/prompt-library/prompts` that the browser half
