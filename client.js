@@ -13,8 +13,10 @@
  * The popup reuses the shipped menu recipe — the same building blocks as
  * the composer's model selector: `MenuSurface` from the web shell's static
  * primitives provides the translucent material, radius, elevation shadow
- * and the macOS backing plate; `useAnchoredPosition` provides native
- * placement (rAF tracking, viewport clamping, `--dsh-anchored-*` sizing);
+ * and the macOS backing plate; placement uses CSS Anchor Positioning (the
+ * trigger carries a unique `anchor-name`, the panel sets `position-anchor`
+ * and derives its insets from `anchor()`), which tracks the trigger and
+ * clamps into the layout viewport without JavaScript;
  * `useDismissOnOutsidePointer` provides the native outside-dismiss. The
  * local CSS only layers content layout on top, using `--dsw-*` theme
  * tokens and `dshpl-` class names.
@@ -23,11 +25,10 @@ window.__ModuleLoader__.load({
   id: '@local/prompt-library',
   factory(require) {
     const React = require('react')
-    const { createElement: h, useState, useEffect, useRef, useCallback, Fragment } = React
+    const { createElement: h, useState, useEffect, useRef, useCallback, useId, Fragment } = React
     const { createPortal } = require('react-dom')
     const {
       MenuSurface,
-      useAnchoredPosition,
       useDismissOnOutsidePointer,
       Button,
       IconPlusOutlineRegular,
@@ -43,8 +44,6 @@ window.__ModuleLoader__.load({
     const API_PATH = 'api/prompt-library/prompts'
     const MAX_TITLE = 100
     const MAX_TEXT = 20000
-    /** Unplaced panel: hidden but laid out at a fixed origin so the anchoring hook's measure pass sees real sizes. */
-    const MEASURE_STYLE = { visibility: 'hidden', left: '0px', top: '0px' }
 
     const zh = {
       'button.label': '提示词',
@@ -154,6 +153,9 @@ window.__ModuleLoader__.load({
     function Entry(props) {
       const [open, setOpen] = useState(false)
       const buttonRef = useRef(null)
+      // Unique CSS anchor name for this mounted trigger, so several
+      // composers (or a remount) never share one anchor.
+      const anchorName = `--dshpl-${useId().replaceAll(':', '')}`
       const close = useCallback(() => {
         setOpen(false)
         if (buttonRef.current !== null) buttonRef.current.focus()
@@ -174,6 +176,7 @@ window.__ModuleLoader__.load({
           type: 'button',
           ref: buttonRef,
           className: 'dshpl-button',
+          style: { anchorName },
           'aria-label': shared.t('button.label'),
           'aria-haspopup': 'menu',
           'aria-expanded': open ? 'true' : 'false',
@@ -181,13 +184,13 @@ window.__ModuleLoader__.load({
           onClick: () => { setOpen(value => !value) },
         }, h(BookmarkIcon)),
         open
-          ? h(Picker, { anchor: buttonRef, onClose: close, input, inputActions })
+          ? h(Picker, { anchor: buttonRef, anchorName, onClose: close, input, inputActions })
           : null,
       )
     }
 
     /** The portaled picker: list + inline management form on the native menu surface. */
-    function Picker({ anchor, onClose, input, inputActions }) {
+    function Picker({ anchor, anchorName, onClose, input, inputActions }) {
       const t = shared.t
       const [prompts, setPrompts] = useState(null)
       const [loadError, setLoadError] = useState(null)
@@ -210,25 +213,15 @@ window.__ModuleLoader__.load({
       // Focus the panel so keyboard users land inside it; Escape returns to the button.
       useEffect(() => { panelRef.current?.focus() }, [])
 
-      // Native placement: opens above the trigger, right-aligned, clamped into
-      // the viewport (visual viewport and frame clearance included).
-      const menuPos = useAnchoredPosition({
-        open: true,
-        anchorRef: anchor,
-        panelRef,
-        side: 'top',
-        align: 'end',
-        gap: 8,
-        margin: 12,
-        layoutKey: `${editing === null ? 'list' : editing.mode}:${sorting ? 'sort' : 'pick'}`,
-      })
-
       // Native dismissal: outside pointer press, the trigger itself excluded.
       useDismissOnOutsidePointer(panelRef, true, onClose, anchor)
 
-      // Escape (consumed, like the host menus).
+      // Escape (consumed, like the host menus). A keydown during IME
+      // composition belongs to the editor: its Escape only cancels the
+      // composition and must not close the picker (and lose the form).
       useEffect(() => {
         const onKeyDown = event => {
+          if (event.isComposing) return
           if (event.key === 'Escape') {
             event.stopPropagation()
             onClose()
@@ -365,7 +358,10 @@ window.__ModuleLoader__.load({
         h(MenuSurface, {
           ref: panelRef,
           className: 'dshpl-menu',
-          style: menuPos ?? MEASURE_STYLE,
+          // CSS anchor placement: the panel follows the trigger above it,
+          // right-aligned, clamped into the layout viewport by the sheet's
+          // insets (see `.dshpl-menu` in CSS).
+          style: { positionAnchor: anchorName },
           role: 'dialog',
           'aria-label': t('picker.title'),
           tabIndex: -1,
@@ -481,17 +477,23 @@ window.__ModuleLoader__.load({
     // ----------------------------------------------------------------- css
 
     const CSS = `
+/* Sizing contract: the panel's height:fit-content derives from children's
+ * intrinsic content, so no child may use flex-basis 0 (flex:1) — WebKit
+ * counts those as zero-content and collapses the panel to an empty strip
+ * (Blink is lenient, which is why the desktop looked fine). Scroll children
+ * keep the shipped recipe's default flex:0 1 auto + min-height:0 and scroll
+ * only when max-height clamps them. */
 .dshpl-button{width:28px;height:28px;flex:none;place-items:center;display:grid;cursor:pointer;border:none;border-radius:999px;padding:0;background:0 0;color:var(--dsw-alias-label-primary)}
 @media (hover:hover){.dshpl-button:hover{background:var(--dsw-alias-interactive-bg-hover-solid)}}
-.dshpl-menu{box-sizing:border-box;position:fixed;z-index:1100;display:flex;flex-direction:column;overflow:hidden;padding:4px;color:var(--dsw-alias-label-primary);width:min(360px,calc(100vw - 32px),var(--dsh-anchored-max-width,100vw));max-height:min(440px,calc(100vh - 96px),var(--dsh-anchored-max-height,100vh));--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent);--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2)}
-.dshpl-pick{display:flex;flex-direction:column;min-height:0;flex:1}
+.dshpl-menu{box-sizing:border-box;position:fixed;z-index:1100;display:flex;flex-direction:column;overflow:hidden;padding:4px;color:var(--dsw-alias-label-primary);position-area:none;top:max(12px,var(--dsh-frame-overlay-top,12px));left:12px;right:anchor(right);bottom:calc(anchor(top) + 8px);align-self:safe end;justify-self:safe end;height:fit-content;width:min(360px,calc(100vw - 32px));max-height:min(440px,calc(100dvh - 96px));--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent);--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2)}
+.dshpl-pick{display:flex;flex-direction:column;min-height:0}
 .dshpl-head{display:flex;align-items:center;gap:8px;padding:6px 8px 4px;flex:none}
 .dshpl-headTitle{flex:1;min-width:0;font-size:11px;font-weight:500;line-height:16px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dshpl-headBtn{flex:none;height:24px;padding:0 8px;display:inline-flex;align-items:center;gap:4px;border:none;border-radius:var(--dsw-radius-sm);background:0 0;color:var(--dsw-alias-label-primary);font-size:12px;line-height:18px;cursor:pointer}
 @media (hover:hover){.dshpl-headBtn:hover{background:var(--dsw-alias-interactive-bg-hover)}}
 .dshpl-headBtn:focus-visible{background:var(--dsw-alias-interactive-bg-hover)}
 .dshpl-headBtnOn,.dshpl-headBtnOn:hover{background:var(--dsw-alias-interactive-bg-active)}
-.dshpl-list{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:2px;padding:2px 0}
+.dshpl-list{min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:2px;padding:2px 0}
 .dshpl-row{display:flex;align-items:center;gap:6px;min-height:34px;padding:5px 7px;border-radius:var(--dsw-radius-md);cursor:pointer;color:var(--dsw-alias-label-primary)}
 @media (hover:hover){.dshpl-row:hover{background:var(--dsw-alias-interactive-bg-hover)}}
 .dshpl-row:focus-visible{outline:none;background:var(--dsw-alias-interactive-bg-hover)}
@@ -504,15 +506,15 @@ window.__ModuleLoader__.load({
 .dshpl-iconBtn:hover:not(:disabled){color:var(--dsw-alias-label-primary)}
 @media (hover:hover){.dshpl-iconBtn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}}
 .dshpl-iconBtn:disabled{opacity:.4;cursor:default}
-.dshpl-status{flex:1;padding:12px 8px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary)}
+.dshpl-status{padding:12px 8px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary)}
 .dshpl-retry{display:inline-block;margin-top:6px;padding:0;border:none;background:0 0;color:var(--dsw-alias-label-primary);font-size:12px;line-height:18px;font-weight:600;cursor:pointer}
 @media (hover:hover){.dshpl-retry:hover{text-decoration:underline}}
-.dshpl-empty{flex:1;display:flex;flex-direction:column;gap:4px;padding:16px 10px}
+.dshpl-empty{display:flex;flex-direction:column;gap:4px;padding:16px 10px}
 .dshpl-emptyTitle{font-size:13px;line-height:18px;color:var(--dsw-alias-label-secondary)}
 .dshpl-emptyHint{font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary)}
 .dshpl-notice{flex:none;border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary);padding:6px 7px;font-size:11px;line-height:16px}
 .dshpl-pick .dshpl-notice{margin:2px 2px 4px}
-.dshpl-form{display:flex;flex-direction:column;gap:8px;padding:8px;min-height:0;flex:1;overflow-y:auto}
+.dshpl-form{display:flex;flex-direction:column;gap:8px;padding:8px;min-height:0;overflow-y:auto}
 .dshpl-formTitle{font-size:11px;font-weight:500;line-height:16px;color:var(--dsw-alias-label-tertiary)}
 .dshpl-input,.dshpl-textarea{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);padding:5px 8px;font:inherit;font-size:13px;line-height:20px}
 .dshpl-textarea{resize:vertical;min-height:96px}
