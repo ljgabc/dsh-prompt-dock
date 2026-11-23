@@ -48,7 +48,7 @@ dsh plugin --profile <你的profile> add dsh-prompt-dock
 **方式二：本地目录（开发者）**
 
 ```sh
-git clone <本仓库> && dsh plugin --profile <你的profile> add ./prompt-library
+git clone https://github.com/ljgabc/dsh-prompt-dock.git && dsh plugin --profile <你的profile> add ./dsh-prompt-dock
 ```
 
 或软链接到 profile 的 `node_modules/dsh-prompt-dock`，改代码后重启 DSH 即可。

@@ -15,8 +15,12 @@
   "author": "ljgabc <ljgabc@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@192.168.2.10/lijg/dsh-prompt-dock.git"
+    "url": "git+https://github.com/ljgabc/dsh-prompt-dock.git"
   },
+  "bugs": {
+    "url": "https://github.com/ljgabc/dsh-prompt-dock/issues"
+  },
+  "homepage": "https://github.com/ljgabc/dsh-prompt-dock#readme",
   "engines": {
     "dsh": ">=0.2.2-rc.5"
   },
