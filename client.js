@@ -180,6 +180,27 @@ window.__ModuleLoader__.load({
         h('path', { d: 'M4 6L7.29289 9.29289C7.68342 9.68342 8.31658 9.68342 8.70711 9.29289L12 6', stroke: 'currentColor' }))
     }
 
+    /** Header actions: import reads a backup file, export writes one. */
+    function IconImport({ size = 14 }) {
+      return h('svg', { viewBox: '0 0 16 16', width: size, height: size, fill: 'none', 'stroke-width': 1, 'aria-hidden': true },
+        h('path', { d: 'M8 1.95317V10.0469', stroke: 'currentColor' }),
+        h('path', { d: 'M4.25 6.29688L8 10.0469L11.75 6.29688', stroke: 'currentColor' }),
+        h('path', {
+          d: 'M1.5 10.0469V13.158C1.5 13.3937 1.60536 13.6198 1.79289 13.7865C1.98043 13.9532 2.23478 14.0469 2.5 14.0469H13.5C13.7652 14.0469 14.0196 13.9532 14.2071 13.7865C14.3946 13.6198 14.5 13.3937 14.5 13.158V10.0469',
+          stroke: 'currentColor',
+        }))
+    }
+
+    function IconExport({ size = 14 }) {
+      return h('svg', { viewBox: '0 0 16 16', width: size, height: size, fill: 'none', 'stroke-width': 1, 'aria-hidden': true },
+        h('path', { d: 'M8 10.0469V1.95317', stroke: 'currentColor' }),
+        h('path', { d: 'M4.25 5.70317L8 1.95317L11.75 5.70317', stroke: 'currentColor' }),
+        h('path', {
+          d: 'M1.5 10.0469V13.158C1.5 13.3937 1.60536 13.6198 1.79289 13.7865C1.98043 13.9532 2.23478 14.0469 2.5 14.0469H13.5C13.7652 14.0469 14.0196 13.9532 14.2071 13.7865C14.3946 13.6198 14.5 13.3937 14.5 13.158V10.0469',
+          stroke: 'currentColor',
+        }))
+    }
+
     /** Button port: the shell's variant/size recipe on public theme tokens. */
     function Button({ variant = 'ghost', size = 'md', className, type = 'button', children, ...rest }) {
       const classes = ['dshpl-btn', variant === 'primary' ? 'dshpl-btnPrimary' : 'dshpl-btnGhost']
@@ -460,6 +481,22 @@ window.__ModuleLoader__.load({
         ? h('div', { className: 'dshpl-pick' },
             h('div', { className: 'dshpl-head' },
               h('span', { className: 'dshpl-headTitle' }, t('picker.title')),
+              h('button', {
+                type: 'button',
+                className: 'dshpl-iconBtn',
+                title: t('picker.import'),
+                'aria-label': t('picker.import'),
+                disabled: busy,
+                onClick: pickImportFile,
+              }, h(IconImport)),
+              h('button', {
+                type: 'button',
+                className: 'dshpl-iconBtn',
+                title: t('picker.export'),
+                'aria-label': t('picker.export'),
+                disabled: busy || prompts === null,
+                onClick: exportLibrary,
+              }, h(IconExport)),
               canSort ? h('button', {
                 type: 'button',
                 className: `dshpl-headBtn${sortActive ? ' dshpl-headBtnOn' : ''}`,
@@ -503,20 +540,6 @@ window.__ModuleLoader__.load({
                       })),
             ),
             notice !== null ? h('div', { className: 'dshpl-notice' }, notice) : null,
-            h('div', { className: 'dshpl-foot' },
-              h('button', {
-                type: 'button',
-                className: 'dshpl-headBtn',
-                disabled: busy,
-                onClick: pickImportFile,
-              }, t('picker.import')),
-              h('button', {
-                type: 'button',
-                className: 'dshpl-headBtn',
-                disabled: busy || prompts === null,
-                onClick: exportLibrary,
-              }, t('picker.export')),
-            ),
           )
         : h(PromptForm, {
             key: editing.mode === 'update' ? editing.id : 'create',
@@ -719,8 +742,6 @@ html[data-platform=darwin] .dshpl-backing{display:block;position:fixed;position-
 @media (pointer:coarse){.dshpl-input,.dshpl-textarea{font-size:16px}}
 .dshpl-input:focus,.dshpl-textarea:focus{outline:none;border-color:var(--dsw-alias-border-l4)}
 .dshpl-formActions{display:flex;justify-content:flex-end;gap:8px;flex:none}
-.dshpl-foot{display:flex;gap:2px;padding:2px 6px 6px;flex:none}
-.dshpl-foot .dshpl-headBtn{height:28px;padding:0 10px}
 `
 
     // --------------------------------------------------------------- module
