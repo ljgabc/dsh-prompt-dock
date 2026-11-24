@@ -1,6 +1,6 @@
 {
   "name": "dsh-prompt-dock",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "type": "module",
   "description": "Preset prompt library for DeepSeek Harness: a picker beside the composer send action that fills the draft, with create/edit/delete plus a sort mode, backed by Host-side storage shared by every client of this Host (desktop browser and phone alike). DSH 预置提示词库，输入框旁一键取用，数据存 Host 侧、多端共享。",
   "keywords": [

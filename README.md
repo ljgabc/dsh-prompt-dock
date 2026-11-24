@@ -23,6 +23,7 @@
 - **一键取用**：整行点选填入/插入，发送前还能微调
 - **完整管理**：新建、编辑、删除（内联表单，保存失败不清空已填内容）
 - **排序模式**：置顶 / 上移 / 下移 / 移到底，顺序持久保存
+- **导入导出**：一键导出 JSON 备份；导入自动合并去重、跳过无效行并汇报计数，可跨 Host 迁移、随时备份
 - **多端共享**：数据存 **Host 侧**（storageDomain 持久化），桌面浏览器与手机浏览器连同一个 Host 时看到的是**同一份库**——在电脑上整理好，手机上直接用
 - **原生观感**：复用 DSH 自带的菜单材质与 CSS 锚点定位（与模型选择器同一套配方），随主题明暗自适应；中英文界面跟随 DSH 语言设置
 - **零依赖、不联网**：不请求任何外部地址，没有账号与服务端
@@ -91,6 +92,7 @@ A preset prompt library plugin for DeepSeek Harness: one compact **Prompts** but
 
 - **Full management**: create, edit, delete (inline form keeps your input on a failed save)
 - **Sort mode**: move to top / up / down / bottom, order persisted
+- **Import / export**: one-click JSON backup download; import merges with dedupe, skips invalid rows and reports counts — migrate across Hosts or back up anytime
 - **Shared across clients**: data lives in Host-side durable storage — desktop and phone browsers connected to the same Host see the same library
 - **Native look**: the shipped menu surface and CSS anchor positioning, follows the DSH theme; UI text follows the DSH locale (zh/en)
 - **No dependencies, no network**: no external requests, no account

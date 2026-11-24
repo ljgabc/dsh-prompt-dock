@@ -150,7 +150,63 @@ async function handleRequest(request, domain) {
       }
       return jsonResponse(200, { ok: true, prompts: listPrompts(table) })
     }
-    throw new Error('action must be one of create, update, delete, reorder')
+    if (body.action === 'import') {
+      // The Host is the only authority for import: every row re-passes the
+      // same field rules as create, duplicates (title+text) are skipped so a
+      // re-import never doubles the library, and the 200-row cap applies per
+      // put. Rows always append after the current max order — file order is
+      // the sequence, so an import into an empty library restores the export's
+      // order exactly. `updatedAt` survives when it is a finite number, so a
+      // backup keeps its original timestamps.
+      if (!Array.isArray(body.prompts)) throw new Error('prompts must be an array')
+      const existingKeys = new Set()
+      let maxOrder = 0
+      for (const [, record] of table.entries()) {
+        existingKeys.add(record.title + '\u0000' + record.text)
+        maxOrder = Math.max(maxOrder, record.order)
+      }
+      let imported = 0
+      let skippedInvalid = 0
+      let skippedDuplicate = 0
+      let skippedOverLimit = 0
+      for (const row of body.prompts) {
+        if (typeof row !== 'object' || row === null || Array.isArray(row)) {
+          skippedInvalid++
+          continue
+        }
+        try {
+          const title = readString(row.title, MAX_TITLE_LENGTH, 'title')
+          const text = readString(row.text, MAX_TEXT_LENGTH, 'text')
+          const key = title + '\u0000' + text
+          if (existingKeys.has(key)) {
+            skippedDuplicate++
+            continue
+          }
+          if (table.size >= MAX_PROMPTS) {
+            skippedOverLimit++
+            continue
+          }
+          const updatedAt = typeof row.updatedAt === 'number' && Number.isFinite(row.updatedAt)
+            ? row.updatedAt
+            : Date.now()
+          maxOrder += 10
+          await table.put(crypto.randomUUID(), { title, text, order: maxOrder, updatedAt })
+          existingKeys.add(key)
+          imported++
+        } catch {
+          skippedInvalid++
+        }
+      }
+      return jsonResponse(200, {
+        ok: true,
+        imported,
+        skippedInvalid,
+        skippedDuplicate,
+        skippedOverLimit,
+        prompts: listPrompts(table),
+      })
+    }
+    throw new Error('action must be one of create, update, delete, reorder, import')
   } catch (error) {
     const message = error instanceof Error ? error.message : 'request failed'
     return jsonResponse(400, { ok: false, error: message })

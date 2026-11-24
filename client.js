@@ -59,6 +59,13 @@ window.__ModuleLoader__.load({
       'form.textPlaceholder': '提示词内容',
       'form.save': '保存',
       'form.cancel': '取消',
+      'picker.import': '导入',
+      'picker.export': '导出',
+      'import.result': '导入 {n} 条',
+      'import.skippedInvalid': '{n} 条无效',
+      'import.skippedDuplicate': '{n} 条重复',
+      'import.skippedOverLimit': '{n} 条超出上限',
+      'import.badFormat': '无法读取：不是有效的提示词导出文件',
     }
     const en = {
       'button.label': 'Prompts',
@@ -83,6 +90,13 @@ window.__ModuleLoader__.load({
       'form.textPlaceholder': 'Prompt text',
       'form.save': 'Save',
       'form.cancel': 'Cancel',
+      'picker.import': 'Import',
+      'picker.export': 'Export',
+      'import.result': 'Imported {n}',
+      'import.skippedInvalid': '{n} invalid',
+      'import.skippedDuplicate': '{n} duplicates',
+      'import.skippedOverLimit': '{n} over limit',
+      'import.badFormat': 'Cannot read: not a valid prompt export file',
     }
 
     /** Module-shared state wired by apply(); components read translations through it. */
@@ -346,6 +360,75 @@ window.__ModuleLoader__.load({
         setEditing({ mode: 'update', id: prompt.id, title: prompt.title, text: prompt.text })
       }
       const remove = prompt => { void mutate({ action: 'delete', id: prompt.id }) }
+
+      /** Download the whole library as a portable JSON backup (client-side only; ids stay internal). */
+      const exportLibrary = () => {
+        if (prompts === null) return
+        const payload = {
+          format: 'dsh-prompt-dock/v1',
+          exportedAt: new Date().toISOString(),
+          prompts: prompts.map(({ title, text, order, updatedAt }) => ({ title, text, order, updatedAt })),
+        }
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `dsh-prompt-dock-${new Date().toISOString().slice(0, 10)}.json`
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+      }
+
+      /** Send file rows to the Host import action, which validates, dedupes and caps; report its counts. */
+      const importFile = async file => {
+        setNotice(null)
+        if (file.size > 4 * 1024 * 1024) {
+          setNotice(t('import.badFormat'))
+          return
+        }
+        let rows
+        try {
+          const parsed = JSON.parse(await file.text())
+          rows = Array.isArray(parsed) ? parsed : parsed?.prompts
+        } catch {
+          rows = undefined
+        }
+        if (!Array.isArray(rows)) {
+          setNotice(t('import.badFormat'))
+          return
+        }
+        setBusy(true)
+        try {
+          const data = await api('POST', { action: 'import', prompts: rows })
+          setPrompts(data.prompts)
+          const parts = [t('import.result').replace('{n}', String(data.imported))]
+          const skips = [
+            ['import.skippedInvalid', data.skippedInvalid],
+            ['import.skippedDuplicate', data.skippedDuplicate],
+            ['import.skippedOverLimit', data.skippedOverLimit],
+          ]
+          for (const [key, count] of skips) {
+            if (count > 0) parts.push(t(key).replace('{n}', String(count)))
+          }
+          setNotice(parts.join(' · '))
+        } catch (error) {
+          setNotice(error instanceof Error ? error.message : t('picker.retry'))
+        } finally {
+          setBusy(false)
+        }
+      }
+
+      const pickImportFile = () => {
+        const fileInput = document.createElement('input')
+        fileInput.type = 'file'
+        fileInput.accept = 'application/json,.json'
+        fileInput.onchange = () => {
+          const file = fileInput.files?.[0]
+          if (file !== undefined) void importFile(file)
+        }
+        fileInput.click()
+      }
       const saveForm = async (title, text) => {
         const body = editing.mode === 'create'
           ? { action: 'create', title, text }
@@ -420,6 +503,20 @@ window.__ModuleLoader__.load({
                       })),
             ),
             notice !== null ? h('div', { className: 'dshpl-notice' }, notice) : null,
+            h('div', { className: 'dshpl-foot' },
+              h('button', {
+                type: 'button',
+                className: 'dshpl-headBtn',
+                disabled: busy,
+                onClick: pickImportFile,
+              }, t('picker.import')),
+              h('button', {
+                type: 'button',
+                className: 'dshpl-headBtn',
+                disabled: busy || prompts === null,
+                onClick: exportLibrary,
+              }, t('picker.export')),
+            ),
           )
         : h(PromptForm, {
             key: editing.mode === 'update' ? editing.id : 'create',
@@ -622,6 +719,8 @@ html[data-platform=darwin] .dshpl-backing{display:block;position:fixed;position-
 @media (pointer:coarse){.dshpl-input,.dshpl-textarea{font-size:16px}}
 .dshpl-input:focus,.dshpl-textarea:focus{outline:none;border-color:var(--dsw-alias-border-l4)}
 .dshpl-formActions{display:flex;justify-content:flex-end;gap:8px;flex:none}
+.dshpl-foot{display:flex;gap:2px;padding:2px 6px 6px;flex:none}
+.dshpl-foot .dshpl-headBtn{height:28px;padding:0 10px}
 `
 
     // --------------------------------------------------------------- module
