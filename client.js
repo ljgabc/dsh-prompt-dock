@@ -10,16 +10,18 @@
  * the Host half's authenticated Fetch route, so every client of this Host
  * sees the same library.
  *
- * The popup reuses the shipped menu recipe — the same building blocks as
- * the composer's model selector: `MenuSurface` from the web shell's static
- * primitives provides the translucent material, radius, elevation shadow
- * and the macOS backing plate; placement uses CSS Anchor Positioning (the
- * trigger carries a unique `anchor-name`, the panel sets `position-anchor`
- * and derives its insets from `anchor()`), which tracks the trigger and
- * clamps into the layout viewport without JavaScript;
- * `useDismissOnOutsidePointer` provides the native outside-dismiss. The
- * local CSS only layers content layout on top, using `--dsw-*` theme
- * tokens and `dshpl-` class names.
+ * The popup follows the shipped menu recipe — the composer's model selector:
+ * a self-contained surface draws the translucent material (fill + backdrop
+ * filter + radius + elevation shadow + the macOS backing plate) from public
+ * `--dsw-*` theme tokens, so the bundle depends on no internal Harness
+ * client package — only `react`/`react-dom` from the browser module table.
+ * Placement uses CSS Anchor Positioning: the trigger carries a unique
+ * `anchor-name`, the panel sets `position-anchor` and derives its insets
+ * from `anchor()`, tracking the trigger and clamping into the layout
+ * viewport without JavaScript. Outside-dismiss is a local port of the
+ * shell's recipe (document pointerdown, trigger excluded). The local CSS
+ * layers content layout on top with `--dsw-*` theme tokens and `dshpl-`
+ * class names.
  */
 window.__ModuleLoader__.load({
   id: 'dsh-prompt-dock',
@@ -27,17 +29,6 @@ window.__ModuleLoader__.load({
     const React = require('react')
     const { createElement: h, useState, useEffect, useRef, useCallback, useId, Fragment } = React
     const { createPortal } = require('react-dom')
-    const {
-      MenuSurface,
-      useDismissOnOutsidePointer,
-      Button,
-      IconPlusOutlineRegular,
-      IconEditOutlineRegular,
-      IconTrashOutlineRegular,
-      IconChevronsUpDownOutlineRegular,
-      IconChevronUpOutlineRegular,
-      IconChevronDownOutlineRegular,
-    } = require('@deepseek-ai/dsh-client-ui-primitives')
 
     const NS = 'prompt-dock'
     /** Document-relative route (the Host serves it under `/api`); matches the shipped file-upload route convention. */
@@ -120,6 +111,89 @@ window.__ModuleLoader__.load({
         h('path', { d: 'M8 3v7.5M5.5 8L8 10.5 10.5 8', stroke: 'currentColor', 'stroke-width': 1, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }))
     }
 
+    // ------------------------------------------- self-contained UI primitives
+    // Ports of the shell's recipes (icon paths, Button styling, the menu
+    // surface material, outside-pointer dismissal), so the bundle imports no
+    // internal Harness client package — only the documented react baseline.
+
+    /** Icon paths copied from the shell's sprite (regular variant, stroke 1). */
+    function IconPlus({ size = 16 }) {
+      return h('svg', { viewBox: '0 0 16 16', width: size, height: size, fill: 'none', 'stroke-width': 1, 'aria-hidden': true },
+        h('path', { d: 'M8 2V14', stroke: 'currentColor' }),
+        h('path', { d: 'M2 8H14', stroke: 'currentColor' }))
+    }
+
+    function IconEdit({ size = 16 }) {
+      return h('svg', { viewBox: '0 0 16 16', width: size, height: size, fill: 'none', 'stroke-width': 1, 'aria-hidden': true },
+        h('path', {
+          d: 'M8.85596 2.69971H4.19971C3.37141 2.69971 2.69992 3.37146 2.69971 4.19971V11.8003C2.69992 12.6285 3.37141 13.3003 4.19971 13.3003H11.8003C12.6283 13.2999 13.3001 12.6283 13.3003 11.8003V7.89893H14.3003V11.8003C14.3001 13.1806 13.1806 14.2999 11.8003 14.3003H4.19971C2.81913 14.3003 1.69992 13.1808 1.69971 11.8003V4.19971C1.69992 2.81918 2.81913 1.69971 4.19971 1.69971H8.85596V2.69971Z',
+          fill: 'currentColor',
+        }),
+        h('path', { d: 'M7.7849 8.23878L13.888 2.13574', stroke: 'currentColor' }))
+    }
+
+    function IconTrash({ size = 16 }) {
+      return h('svg', { viewBox: '0 0 16 16', width: size, height: size, fill: 'none', 'stroke-width': 1, 'aria-hidden': true },
+        h('path', { d: 'M1.28149 3.88831H14.7187', stroke: 'currentColor' }),
+        h('path', {
+          d: 'M5.41602 3.88833V2.47962C5.41602 2.29282 5.52492 2.11366 5.71876 1.98157C5.9126 1.84948 6.17551 1.77527 6.44964 1.77527H9.55053C9.82466 1.77527 10.0876 1.84948 10.2814 1.98157C10.4753 2.11366 10.5842 2.29282 10.5842 2.47962V3.88833',
+          stroke: 'currentColor',
+        }),
+        h('path', {
+          d: 'M2.57349 3.88831L3.19366 13.2943C3.21937 13.5502 3.33952 13.7872 3.53065 13.9593C3.72178 14.1313 3.97016 14.2259 4.22729 14.2246H11.7728C12.0299 14.2259 12.2783 14.1313 12.4694 13.9593C12.6605 13.7872 12.7807 13.5502 12.8064 13.2943L13.4266 3.88831',
+          stroke: 'currentColor',
+        }),
+        h('path', { d: 'M6.44946 6.98926V11.1238', stroke: 'currentColor' }),
+        h('path', { d: 'M9.55054 6.98926V11.1238', stroke: 'currentColor' }))
+    }
+
+    function IconChevronsUpDown({ size = 16 }) {
+      return h('svg', {
+        viewBox: '0 0 16 16', width: size, height: size, fill: 'none', stroke: 'currentColor',
+        'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': 1, 'aria-hidden': true,
+      },
+        h('path', { d: 'm5.1 6 2.9-2.9L10.9 6' }),
+        h('path', { d: 'm5.1 10 2.9 2.9 2.9-2.9' }))
+    }
+
+    function IconChevronUp({ size = 14 }) {
+      return h('svg', { viewBox: '0 0 16 16', width: size, height: size, fill: 'none', 'stroke-width': 1, 'aria-hidden': true },
+        h('path', { d: 'M12 10L8.70711 6.70711C8.31658 6.31658 7.68342 6.31658 7.29289 6.70711L4 10', stroke: 'currentColor' }))
+    }
+
+    function IconChevronDown({ size = 14 }) {
+      return h('svg', { viewBox: '0 0 16 16', width: size, height: size, fill: 'none', 'stroke-width': 1, 'aria-hidden': true },
+        h('path', { d: 'M4 6L7.29289 9.29289C7.68342 9.68342 8.31658 9.68342 8.70711 9.29289L12 6', stroke: 'currentColor' }))
+    }
+
+    /** Button port: the shell's variant/size recipe on public theme tokens. */
+    function Button({ variant = 'ghost', size = 'md', className, type = 'button', children, ...rest }) {
+      const classes = ['dshpl-btn', variant === 'primary' ? 'dshpl-btnPrimary' : 'dshpl-btnGhost']
+      if (size === 'sm') classes.push('dshpl-btnSm')
+      if (className !== undefined && className !== '') classes.push(className)
+      return h('button', { type, className: classes.join(' '), ...rest }, children)
+    }
+
+    /**
+     * Outside-pointer dismissal, ported from the shell's recipe: a document
+     * (bubble-phase) pointerdown outside both the panel and the excluded
+     * trigger ref closes, with `false` passed to the setter like the shell's.
+     */
+    function useDismissOnOutsidePointer(ref, active, setOpen, excludeRef) {
+      useEffect(() => {
+        if (!active) return
+        const onPointerDown = event => {
+          if (event.target instanceof Node
+            && ref.current?.contains(event.target) !== true
+            && excludeRef?.current?.contains(event.target) !== true) {
+            setOpen(false)
+          }
+        }
+        document.addEventListener('pointerdown', onPointerDown)
+        return () => { document.removeEventListener('pointerdown', onPointerDown) }
+      }, [ref, active, setOpen, excludeRef])
+    }
+
     // ------------------------------------------------------------------ api
 
     async function api(method, body) {
@@ -189,7 +263,7 @@ window.__ModuleLoader__.load({
       )
     }
 
-    /** The portaled picker: list + inline management form on the native menu surface. */
+    /** The portaled picker: list + inline management form on the menu surface. */
     function Picker({ anchor, anchorName, onClose, input, inputActions }) {
       const t = shared.t
       const [prompts, setPrompts] = useState(null)
@@ -199,6 +273,8 @@ window.__ModuleLoader__.load({
       const [busy, setBusy] = useState(false)
       const [sorting, setSorting] = useState(false)
       const panelRef = useRef(null)
+      // The surface names itself so the macOS backing plate can anchor to it.
+      const surfaceAnchor = `--dshpl-surface-${useId().replaceAll(':', '')}`
 
       const reload = useCallback(() => {
         setPrompts(null)
@@ -213,7 +289,7 @@ window.__ModuleLoader__.load({
       // Focus the panel so keyboard users land inside it; Escape returns to the button.
       useEffect(() => { panelRef.current?.focus() }, [])
 
-      // Native dismissal: outside pointer press, the trigger itself excluded.
+      // Outside-pointer dismissal (shell recipe), the trigger itself excluded.
       useDismissOnOutsidePointer(panelRef, true, onClose, anchor)
 
       // Escape (consumed, like the host menus). A keydown during IME
@@ -306,12 +382,12 @@ window.__ModuleLoader__.load({
                 className: `dshpl-headBtn${sortActive ? ' dshpl-headBtnOn' : ''}`,
                 'aria-pressed': sortActive ? 'true' : 'false',
                 onClick: toggleSorting,
-              }, h(IconChevronsUpDownOutlineRegular, { size: 14 }), sortActive ? t('sort.done') : t('sort.toggle')) : null,
+              }, h(IconChevronsUpDown, { size: 14 }), sortActive ? t('sort.done') : t('sort.toggle')) : null,
               h('button', {
                 type: 'button',
                 className: 'dshpl-headBtn',
                 onClick: startCreate,
-              }, h(IconPlusOutlineRegular, { size: 14 }), t('picker.new')),
+              }, h(IconPlus, { size: 14 }), t('picker.new')),
             ),
             h('div', { className: 'dshpl-list', role: sortActive ? 'list' : 'menu' },
               prompts === null
@@ -354,19 +430,34 @@ window.__ModuleLoader__.load({
             onCancel: () => { setNotice(null); setEditing(null) },
           })
 
-      return createPortal(
-        h(MenuSurface, {
-          ref: panelRef,
-          className: 'dshpl-menu',
-          // CSS anchor placement: the panel follows the trigger above it,
-          // right-aligned, clamped into the layout viewport by the sheet's
-          // insets (see `.dshpl-menu` in CSS).
-          style: { positionAnchor: anchorName },
-          role: 'dialog',
-          'aria-label': t('picker.title'),
-          tabIndex: -1,
-        }, body),
-        document.body,
+      // The surface: the translucent material layer rides inside (z-index
+      // -1, isolation keeps it behind content but above the page), and the
+      // macOS backing plate follows the surface's own anchor. CSS anchor
+      // placement: the panel follows the trigger above it, right-aligned,
+      // clamped into the layout viewport by the sheet's insets (see
+      // `.dshpl-menu` in CSS).
+      return h(Fragment, null,
+        createPortal(
+          h('div', {
+            ref: panelRef,
+            className: 'dshpl-menu',
+            style: { positionAnchor: anchorName, '--dshpl-surface-anchor': surfaceAnchor },
+            role: 'dialog',
+            'aria-label': t('picker.title'),
+            tabIndex: -1,
+          },
+            h('div', { className: 'dshpl-material', 'aria-hidden': true }),
+            body),
+          document.body,
+        ),
+        createPortal(
+          h('div', {
+            className: 'dshpl-backing',
+            'aria-hidden': true,
+            style: { '--dshpl-surface-anchor': surfaceAnchor },
+          }),
+          document.body,
+        ),
       )
     }
 
@@ -395,8 +486,8 @@ window.__ModuleLoader__.load({
         return h('div', { className: 'dshpl-row dshpl-rowSorting', role: 'listitem' },
           main,
           moveBtn('top', ToTopIcon, t('sort.toTop'), isFirst),
-          moveBtn('up', IconChevronUpOutlineRegular, t('sort.up'), isFirst),
-          moveBtn('down', IconChevronDownOutlineRegular, t('sort.down'), isLast),
+          moveBtn('up', IconChevronUp, t('sort.up'), isFirst),
+          moveBtn('down', IconChevronDown, t('sort.down'), isLast),
           moveBtn('bottom', ToBottomIcon, t('sort.toBottom'), isLast),
         )
       }
@@ -419,14 +510,14 @@ window.__ModuleLoader__.load({
           title: t('picker.edit'),
           'aria-label': `${t('picker.edit')}: ${prompt.title}`,
           onClick: event => { event.stopPropagation(); onEdit(prompt) },
-        }, h(IconEditOutlineRegular, { size: 14 })),
+        }, h(IconEdit, { size: 14 })),
         h('button', {
           type: 'button',
           className: 'dshpl-iconBtn',
           title: t('picker.delete'),
           'aria-label': `${t('picker.delete')}: ${prompt.title}`,
           onClick: event => { event.stopPropagation(); onRemove(prompt) },
-        }, h(IconTrashOutlineRegular, { size: 14 })),
+        }, h(IconTrash, { size: 14 })),
       )
     }
 
@@ -485,7 +576,17 @@ window.__ModuleLoader__.load({
  * only when max-height clamps them. */
 .dshpl-button{width:28px;height:28px;flex:none;place-items:center;display:grid;cursor:pointer;border:none;border-radius:999px;padding:0;background:0 0;color:var(--dsw-alias-label-primary)}
 @media (hover:hover){.dshpl-button:hover{background:var(--dsw-alias-interactive-bg-hover-solid)}}
-.dshpl-menu{box-sizing:border-box;position:fixed;z-index:1100;display:flex;flex-direction:column;overflow:hidden;padding:4px;color:var(--dsw-alias-label-primary);position-area:none;top:max(12px,var(--dsh-frame-overlay-top,12px));left:12px;right:anchor(right);bottom:calc(anchor(top) + 8px);align-self:safe end;justify-self:safe end;height:fit-content;width:min(360px,calc(100vw - 32px));max-height:min(440px,calc(100dvh - 96px));--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent);--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2)}
+.dshpl-menu{box-sizing:border-box;position:fixed;z-index:1100;display:flex;flex-direction:column;overflow:hidden;padding:4px;color:var(--dsw-alias-label-primary);position-area:none;top:max(12px,var(--dsh-frame-overlay-top,12px));left:12px;right:anchor(right);bottom:calc(anchor(top) + 8px);align-self:safe end;justify-self:safe end;height:fit-content;width:min(360px,calc(100vw - 32px));max-height:min(440px,calc(100dvh - 96px));border-radius:var(--dsw-radius-lg);anchor-name:var(--dshpl-surface-anchor);isolation:isolate;--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent);--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2)}
+.dshpl-material{position:absolute;inset:0;z-index:-1;border-radius:inherit;background:var(--dsw-menu-surface-fill);backdrop-filter:var(--dsw-menu-backdrop-filter);pointer-events:none}
+.dshpl-backing{display:none;border-radius:var(--dsw-radius-lg)}
+html[data-platform=darwin] .dshpl-backing{display:block;position:fixed;position-anchor:var(--dshpl-surface-anchor);top:anchor(top);left:anchor(left);width:anchor-size(width,0px);height:anchor-size(height,0px);z-index:-1;background:var(--dsw-alias-bg-base);pointer-events:none}
+.dshpl-btn{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:4px;border:none;border-radius:var(--dsw-radius-md);cursor:pointer;font-size:14px;line-height:22px;color:var(--dsw-alias-label-primary);background:transparent;padding:0 14px}
+.dshpl-btn:disabled{cursor:not-allowed;opacity:.4}
+.dshpl-btnSm{height:28px;font-size:12px;line-height:18px;padding:0 10px;border-radius:var(--dsw-radius-sm)}
+.dshpl-btnPrimary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground)}
+.dshpl-btnPrimary:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}
+.dshpl-btnGhost:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}
+.dshpl-btnGhost:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}
 .dshpl-pick{display:flex;flex-direction:column;min-height:0}
 .dshpl-head{display:flex;align-items:center;gap:8px;padding:6px 8px 4px;flex:none}
 .dshpl-headTitle{flex:1;min-width:0;font-size:11px;font-weight:500;line-height:16px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

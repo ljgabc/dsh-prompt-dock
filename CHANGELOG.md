@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0
+
+- 自包含 UI：图标、按钮、菜单材质（含 macOS 背板）、外点关闭全部改为本地实现（移植自 shell 配方，仅用公开 `--dsw-*` 主题令牌），运行时只依赖 `react`/`react-dom`，不再引用内部包 `@deepseek-ai/dsh-client-ui-primitives`，降低 DSH 升级破坏面。
+
 ## 1.2.2
 
 - 修复 iOS Safari（WebKit）上面板塌缩成空条的问题：面板 `height: fit-content` 依赖子元素内容撑起，纵向链上的 `flex:1`（`flex-basis: 0`）在 WebKit 固有高度计算中按 0 处理；全部改回官方配方的默认 `flex: 0 1 auto`，超高时由列表/表单滚动。

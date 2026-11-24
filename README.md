@@ -66,16 +66,16 @@ git clone https://github.com/ljgabc/dsh-prompt-dock.git && dsh plugin --profile 
 
 | 项 | 说明 |
 |---|---|
-| 存储位置 | DSH profile 的 storageDomain 持久存储（Host 侧磁盘） |
+| 存储位置 | DSH profile 的 storageDomain 持久存储：`~/.dsh/storages/prompt_library.json` |
 | 是否上传 | ❌ 不上传任何数据，无外部请求 |
 | 多端 | 同一 Host 的所有客户端（桌面/手机浏览器）共享同一份 |
 | 容量上限 | 200 条，单条正文 ≤ 20000 字符 |
-| 卸载 | 随插件卸载清除该存储域 |
+| 卸载 | 数据文件保留（卸载不清除）；想彻底删除就删掉上面那个 json 文件 |
 
 ## 已知边界
 
 - 草稿「整段替换」依赖 DSH `InputActions` 能力边界：空草稿直接设置，非空时插入光标处，不主动清空
-- 面板定位使用 CSS Anchor Positioning，需要较新的浏览器内核（iOS Safari 18+/Chrome 125+ 实测可用）
+- 面板定位使用 CSS Anchor Positioning，需要较新的浏览器内核（Chrome 125+ / Safari 26+；实测桌面 Chrome 与 iOS 26 Safari）
 
 ## 许可
 
@@ -97,7 +97,7 @@ A preset prompt library plugin for DeepSeek Harness: one compact **Prompts** but
 
 **Install**: in the DSH plugin dialog, enter just `dsh-prompt-dock` (published on npm; requires DSH ≥ 0.2.2-rc.5), or `dsh plugin --profile <profile> add dsh-prompt-dock` in a terminal. Restart DSH after install.
 
-**Data**: stored in the profile's storage domain (limits: 200 prompts, 20000 chars each); nothing leaves the Host.
+**Data**: stored in the profile's storage domain at `~/.dsh/storages/prompt_library.json` (limits: 200 prompts, 20000 chars each); nothing leaves the Host. Uninstalling the plugin keeps the file — delete it to wipe the data.
 
 License: [MIT](LICENSE)
 
